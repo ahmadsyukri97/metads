@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meta Ads Report Generator — BGA</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:       #0F2044;
+  --navy-mid:   #1A2E5A;
+  --blue:       #2563EB;
+  --blue-light: #EFF6FF;
+  --blue-muted: #BFDBFE;
+  --ink:        #0F172A;
+  --ink-mid:    #334155;
+  --muted:      #64748B;
+  --line:       #E2E8F0;
+  --surface:    #F8FAFC;
+  --white:      #FFFFFF;
+  --red:        #DC2626;
+  --green:      #16A34A;
+  --amber:      #D97706;
+  --amber-bg:   #FFFBEB;
+  --green-bg:   #F0FDF4;
+  --red-bg:     #FEF2F2;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: var(--navy);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.logo-badge {
+  background: var(--blue);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+.header-tag {
+  font-size: 12px;
+  color: var(--blue-muted);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── LAYOUT ── */
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+.page-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+/* ── STEPS ── */
+.steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 2rem;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.step {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.step:last-child { border-right: none; }
+.step.active { background: var(--blue-light); }
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step.active .step-num { background: var(--blue); color: white; }
+.step.done .step-num { background: var(--green); color: white; }
+.step-label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.step.active .step-label { color: var(--blue); }
+.step.done .step-label { color: var(--green); }
+
+/* ── CARD ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.card-icon svg { width: 16px; height: 16px; color: var(--blue); }
+.card-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+.card-sub { font-size: 12px; color: var(--muted); }
+
+/* ── GRID ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+/* ── FIELD ── */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.field input, .field select {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: var(--white);
+}
+.field input.mono { font-family: 'DM Mono', monospace; font-size: 13px; }
+.field .hint { font-size: 11px; color: var(--muted); }
+
+/* ── PRODUK ROW ── */
+.produk-header {
+  display: grid;
+  grid-template-columns: 2.5fr 1.5fr 0.8fr 38px;
+  gap: 8px;
+  padding: 0 0 6px;
+  margin-bottom: 4px;
+}
+.produk-header span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.produk-row {
+  display: grid;
+  grid-template-columns: 2.5fr 1.5fr 0.8fr 38px;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.btn-del {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-del:hover { background: var(--red-bg); border-color: #FECACA; color: var(--red); }
+.btn-del svg { width: 15px; height: 15px; }
+
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.15s;
+}
+.btn-add:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.btn-add svg { width: 14px; height: 14px; }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--line); margin: 1.25rem 0; }
+
+/* ── GENERATE BTN ── */
+.btn-generate {
+  width: 100%;
+  height: 48px;
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.25rem;
+  letter-spacing: -0.01em;
+  transition: all 0.2s;
+}
+.btn-generate:hover { background: var(--blue); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,99,235,0.25); }
+.btn-generate:active { transform: translateY(0); }
+.btn-generate svg { width: 18px; height: 18px; }
+
+/* ── ERROR ── */
+.error-msg {
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 6px;
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+.error-msg.show { display: flex; }
+
+/* ── SUMMARY SECTION ── */
+.summary-wrap {
+  display: none;
+  animation: fadeUp 0.3s ease;
+}
+.summary-wrap.show { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.summary-title { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1rem; }
+.kpi-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+.kpi-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-val { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; font-family: 'DM Mono', monospace; }
+.kpi-val.blue  { color: var(--blue); }
+.kpi-val.green { color: var(--green); }
+.kpi-val.red   { color: var(--red); }
+.kpi-val.amber { color: var(--amber); }
+
+/* ── ROAS BANNER ── */
+.roas-banner {
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.roas-banner.good { background: var(--green-bg); border: 1px solid #BBF7D0; }
+.roas-banner.bad  { background: var(--red-bg);   border: 1px solid #FECACA; }
+.roas-label { font-size: 13px; font-weight: 500; }
+.roas-label.good { color: #166534; }
+.roas-label.bad  { color: #991B1B; }
+.roas-big { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; }
+.roas-big.good { color: var(--green); }
+.roas-big.bad  { color: var(--red); }
+
+/* ── PRODUK TABLE ── */
+.produk-table-wrap {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.produk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.produk-table th {
+  background: var(--navy);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 14px;
+  text-align: left;
+}
+.produk-table th:not(:first-child) { text-align: right; }
+.produk-table td {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-mid);
+}
+.produk-table td:not(:first-child) { text-align: right; font-family: 'DM Mono', monospace; font-size: 12.5px; }
+.produk-table tr.total-row td { background: var(--surface); font-weight: 700; color: var(--ink); }
+.produk-table .produk-name { font-weight: 500; color: var(--ink); }
+
+/* ── PDF BUTTON ── */
+.btn-pdf {
+  width: 100%;
+  height: 48px;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+  transition: all 0.2s;
+}
+.btn-pdf:hover { background: #1D4ED8; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+.btn-pdf:active { transform: translateY(0); }
+.btn-pdf svg { width: 18px; height: 18px; }
+
+.btn-reset {
+  width: 100%;
+  height: 38px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s;
+}
+.btn-reset:hover { background: var(--surface); color: var(--ink); }
+
+/* ── FOOTER ── */
+.site-footer {
+  text-align: center;
+  padding: 2rem;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  margin-top: 2rem;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .g4, .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .produk-row, .produk-header { grid-template-columns: 2fr 1.2fr 0.6fr 38px; }
+  .steps { flex-direction: column; border-radius: 10px; }
+  .step { border-right: none; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: none; }
+}
+@media (max-width: 400px) {
+  .g2, .g3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">
+    <span class="logo-badge">BGA</span>
+    Meta Ads Report Generator
+  </div>
+  <span class="header-tag">v1.0 · Mingguan</span>
+</header>
+
+<div class="container">
+
+  <p class="page-title">Input Data Laporan Mingguan</p>
+  <p class="page-sub">Isi semua data di bawah, lalu generate PDF laporan untuk pimpinan.</p>
+
+  <div class="steps">
+    <div class="step active" id="step1"><div class="step-num">1</div><span class="step-label">Identitas & Periode</span></div>
+    <div class="step" id="step2"><div class="step-num">2</div><span class="step-label">Metrik Iklan</span></div>
+    <div class="step" id="step3"><div class="step-num">3</div><span class="step-label">Closing & Produk</span></div>
+  </div>
+
+  <!-- IDENTITAS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Identitas & Periode</div>
+        <div class="card-sub">Informasi dasar laporan</div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="field">
+        <label>Nama Bimbel / Bisnis</label>
+        <input type="text" id="nama" placeholder="Bimbel Generasi Andalan">
+      </div>
+      <div class="field">
+        <label>Periode Laporan</label>
+        <input type="text" id="periode" placeholder="20 – 27 Mei 2026">
+      </div>
+    </div>
+  </div>
+
+  <!-- METRIK -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Metrik Meta Ads</div>
+        <div class="card-sub">Dari dashboard Meta Ads Manager</div>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="field">
+        <label>Budget Harian (Rp)</label>
+        <input type="number" id="budget_harian" placeholder="150000" class="mono">
+      </div>
+      <div class="field">
+        <label>Jumlah Hari Aktif</label>
+        <input type="number" id="hari" value="7" class="mono">
+      </div>
+      <div class="field">
+        <label>Total Amount Spent (Rp)</label>
+        <input type="number" id="spent" placeholder="1084319" class="mono">
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="g3">
+      <div class="field">
+        <label>Reach (Akun Unik)</label>
+        <input type="number" id="reach" placeholder="98467" class="mono">
+      </div>
+      <div class="field">
+        <label>Result Dashboard Meta</label>
+        <input type="number" id="result_meta" placeholder="254" class="mono">
+      </div>
+      <div class="field">
+        <label>Real Chat WhatsApp</label>
+        <input type="number" id="result_wa" placeholder="222" class="mono">
+        <span class="hint">Chat yang benar-benar masuk</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUK -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Produk & Hasil Closing</div>
+        <div class="card-sub">Input semua produk yang terjual dalam periode ini</div>
+      </div>
+    </div>
+
+    <div class="produk-header">
+      <span>Nama Produk</span>
+      <span>Harga (Rp)</span>
+      <span>Qty</span>
+      <span></span>
+    </div>
+
+    <div id="produk-list"></div>
+
+    <button class="btn-add" onclick="addProduk()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Tambah Produk
+    </button>
+
+    <div class="error-msg" id="error-produk">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Isi minimal 1 produk dengan nama, harga, dan qty terjual.
+    </div>
+  </div>
+
+  <button class="btn-generate" onclick="generate()">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 017 7h2"/><path d="M15 7h2a5 5 0 010 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Hitung & Tampilkan Ringkasan
+  </button>
+
+  <!-- SUMMARY -->
+  <div class="summary-wrap" id="summary-wrap">
+    <div class="divider" style="margin: 2rem 0;"></div>
+
+    <div class="summary-header">
+      <div class="summary-title">Ringkasan Laporan</div>
+      <span id="summary-periode" style="font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;"></span>
+    </div>
+
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="roas-banner" id="roas-banner"></div>
+    <div class="produk-table-wrap" id="produk-table"></div>
+
+    <button class="btn-pdf" onclick="generatePDF()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Download PDF Laporan
+    </button>
+    <button class="btn-reset" onclick="resetForm()">Isi Laporan Baru</button>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  Meta Ads Report Generator · Bimbel Generasi Andalan · Laporan Mingguan
+</footer>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+// ── Produk management ──────────────────────────────────────────────────────
+let uid = 0;
+
+function addProduk(nama='', harga='', qty='') {
+  uid++;
+  const id = uid;
+  const wrap = document.createElement('div');
+  wrap.className = 'produk-row';
+  wrap.id = 'pr-' + id;
+  wrap.innerHTML = `
+    <input type="text" placeholder="Paket Belajar Basic" value="${nama}" class="mono" style="height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13px;font-family:'DM Mono',monospace;width:100%;">
+    <input type="number" placeholder="500000" value="${harga}" class="mono" style="height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13px;font-family:'DM Mono',monospace;width:100%;">
+    <input type="number" placeholder="3" value="${qty}" class="mono" style="height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13px;font-family:'DM Mono',monospace;width:100%;">
+    <button class="btn-del" onclick="delProduk(${id})" title="Hapus">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </button>
+  `;
+  document.getElementById('produk-list').appendChild(wrap);
+}
+
+function delProduk(id) {
+  const el = document.getElementById('pr-' + id);
+  if (el) el.remove();
+}
+
+function getProduk() {
+  const rows = document.querySelectorAll('#produk-list .produk-row');
+  const list = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const nama  = inputs[0].value.trim();
+    const harga = parseFloat(inputs[1].value) || 0;
+    const qty   = parseInt(inputs[2].value) || 0;
+    if (nama && harga > 0 && qty > 0) list.push({ nama, harga, qty });
+  });
+  return list;
+}
+
+// ── Format helpers ─────────────────────────────────────────────────────────
+function rp(n) {
+  return 'Rp' + Math.round(n).toLocaleString('id-ID');
+}
+function rpShort(n) {
+  if (n >= 1000000) return 'Rp' + (n / 1000000).toFixed(2) + ' Jt';
+  if (n >= 1000) return 'Rp' + (n / 1000).toFixed(0) + ' Rb';
+  return rp(n);
+}
+
+// ── Global state ───────────────────────────────────────────────────────────
+let reportData = null;
+
+// ── Generate summary ───────────────────────────────────────────────────────
+function generate() {
+  document.getElementById('error-produk').classList.remove('show');
+
+  const produk = getProduk();
+  if (produk.length === 0) {
+    document.getElementById('error-produk').classList.add('show');
+    return;
+  }
+
+  const nama        = document.getElementById('nama').value.trim() || 'Bimbel';
+  const periode     = document.getElementById('periode').value.trim() || '-';
+  const budHarian   = parseFloat(document.getElementById('budget_harian').value) || 0;
+  const hari        = parseInt(document.getElementById('hari').value) || 7;
+  const spent       = parseFloat(document.getElementById('spent').value) || 0;
+  const reach       = parseInt(document.getElementById('reach').value) || 0;
+  const resMeta     = parseInt(document.getElementById('result_meta').value) || 0;
+  const resWA       = parseInt(document.getElementById('result_wa').value) || 0;
+
+  const budgetIdeal  = budHarian * hari;
+  const overspend    = spent - budgetIdeal;
+  const overpct      = budgetIdeal > 0 ? ((overspend / budgetIdeal) * 100).toFixed(1) : 0;
+  const gap          = resMeta - resWA;
+  const gapPct       = resMeta > 0 ? ((gap / resMeta) * 100).toFixed(1) : 0;
+  const cprMeta      = resMeta > 0 ? spent / resMeta : 0;
+  const cprWA        = resWA > 0 ? spent / resWA : 0;
+  const totalOmzet   = produk.reduce((s, p) => s + p.harga * p.qty, 0);
+  const totalUnit    = produk.reduce((s, p) => s + p.qty, 0);
+  const roas         = spent > 0 ? totalOmzet / spent : 0;
+
+  reportData = { nama, periode, budHarian, hari, spent, reach, resMeta, resWA,
+    budgetIdeal, overspend, overpct, gap, gapPct, cprMeta, cprWA,
+    totalOmzet, totalUnit, roas, produk };
+
+  // Step indicators
+  document.getElementById('step1').className = 'step done';
+  document.getElementById('step2').className = 'step done';
+  document.getElementById('step3').className = 'step done';
+
+  // Periode label
+  document.getElementById('summary-periode').textContent = periode;
+
+  // KPI grid
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Total Spent</div><div class="kpi-val blue">${rp(spent)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">CPR Real WA</div><div class="kpi-val red">${rp(cprWA)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Real Chat WA</div><div class="kpi-val">${resWA}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Omzet</div><div class="kpi-val green">${rp(totalOmzet)}</div></div>
+  `;
+
+  // ROAS banner
+  const roasGood = roas >= 2;
+  document.getElementById('roas-banner').className = 'roas-banner ' + (roasGood ? 'good' : 'bad');
+  document.getElementById('roas-banner').innerHTML = `
+    <div>
+      <div class="roas-label ${roasGood ? 'good' : 'bad'}" style="font-size:15px;font-weight:700;margin-bottom:4px">ROAS ${roas.toFixed(2)}x — ${roasGood ? 'Iklan Menguntungkan' : 'Perlu Evaluasi'}</div>
+      <div style="font-size:13px;color:${roasGood ? '#166534' : '#991B1B'}">Setiap Rp1 iklan menghasilkan Rp${roas.toFixed(2)} omzet</div>
+    </div>
+    <div class="roas-big ${roasGood ? 'good' : 'bad'}">${roas.toFixed(2)}x</div>
+  `;
+
+  // Produk table
+  let rows = produk.map(p => `
+    <tr>
+      <td class="produk-name">${p.nama}</td>
+      <td>${rp(p.harga)}</td>
+      <td>${p.qty}</td>
+      <td>${rp(p.harga * p.qty)}</td>
+    </tr>`).join('');
+  rows += `<tr class="total-row"><td>Total Keseluruhan</td><td>—</td><td>${totalUnit} unit</td><td>${rp(totalOmzet)}</td></tr>`;
+
+  document.getElementById('produk-table').innerHTML = `
+    <table class="produk-table">
+      <thead><tr><th>Produk</th><th style="text-align:right">Harga</th><th style="text-align:right">Qty</th><th style="text-align:right">Subtotal</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  const sw = document.getElementById('summary-wrap');
+  sw.classList.add('show');
+  setTimeout(() => sw.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ── Generate PDF ───────────────────────────────────────────────────────────
+function generatePDF() {
+  if (!reportData) return;
+  const d = reportData;
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, margin = 18, CW = W - margin * 2;
+
+  // Helpers
+  const rpPdf = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+  let y = 0;
+
+  function setFont(style, size, color) {
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    if (color) doc.setTextColor(...color);
+    else doc.setTextColor(15, 23, 42);
+  }
+
+  function rect(x, yr, w, h, r, g, b) {
+    doc.setFillColor(r, g, b);
+    doc.rect(x, yr, w, h, 'F');
+  }
+
+  function line(x1, yr, x2, r, g, b, lw) {
+    doc.setLineWidth(lw || 0.3);
+    doc.setDrawColor(r, g, b);
+    doc.line(x1, yr, x2, yr);
+  }
+
+  // ── Header ──
+  rect(0, 0, W, 24, 15, 32, 68);       // navy
+  rect(0, 24, W, 10, 37, 99, 235);     // blue
+  setFont('bold', 16, [255, 255, 255]);
+  doc.text('Laporan Performa Meta Ads', W / 2, 14, { align: 'center' });
+  setFont('normal', 9, [191, 219, 254]);
+  doc.text(`${d.nama}  ·  ${d.periode}  ·  ${d.hari} Hari Aktif  ·  Messaging Campaign`, W / 2, 30, { align: 'center' });
+
+  y = 42;
+
+  // ── Ringkasan Eksekutif ──
+  setFont('bold', 9, [37, 99, 235]);
+  doc.text('RINGKASAN EKSEKUTIF', margin, y);
+  line(margin, y + 2, W - margin, 37, 99, 235, 0.5);
+  y += 7;
+
+  const exec = [
+    `Kampanye ${d.hari} hari menghabiskan ${rpPdf(d.spent)} dari budget harian ${rpPdf(d.budHarian)}.`,
+    `Dashboard Meta: ${d.resMeta} hasil. Real WhatsApp: ${d.resWA} chat. Gap ${d.gapPct}% (${d.gap} result tidak masuk WA).`,
+    `CPR real Rp${Math.round(d.cprWA).toLocaleString('id-ID')} — lebih tinggi ${(((d.cprWA - d.cprMeta) / d.cprMeta) * 100).toFixed(1)}% dari dashboard Rp${Math.round(d.cprMeta).toLocaleString('id-ID')}.`,
+  ];
+
+  exec.forEach(line2 => {
+    setFont('normal', 9, [51, 65, 85]);
+    const lines = doc.splitTextToSize('• ' + line2, CW - 4);
+    doc.text(lines, margin + 2, y);
+    y += lines.length * 5 + 2;
+  });
+
+  y += 4;
+
+  // ── Metrik Utama ──
+  setFont('bold', 9, [37, 99, 235]);
+  doc.text('METRIK UTAMA', margin, y);
+  line(margin, y + 2, W - margin, 37, 99, 235, 0.5);
+  y += 7;
+
+  const kpis = [
+    { label: 'Amount Spent',    val: rpPdf(d.spent),   sub: `Total ${d.hari} Hari` },
+    { label: 'Reach',           val: d.reach.toLocaleString('id-ID'), sub: 'Akun Unik' },
+    { label: 'Result (Meta)',   val: String(d.resMeta), sub: 'Dashboard Platform' },
+    { label: 'Real Chat WA',    val: String(d.resWA),   sub: 'Chat Masuk Aktual' },
+  ];
+
+  const kw = CW / 4;
+  kpis.forEach((k, i) => {
+    const x = margin + i * kw;
+    const bg = i < 2 ? [239, 246, 255] : i === 2 ? [254, 243, 199] : [220, 252, 231];
+    rect(x + 1, y, kw - 2, 20, ...bg);
+    doc.setDrawColor(209, 213, 219);
+    doc.setLineWidth(0.3);
+    doc.rect(x + 1, y, kw - 2, 20);
+    setFont('bold', 11, [15, 32, 68]);
+    doc.text(k.val, x + kw / 2, y + 9, { align: 'center' });
+    setFont('normal', 7.5, [107, 114, 128]);
+    doc.text(k.label, x + kw / 2, y + 14, { align: 'center' });
+    doc.text(k.sub, x + kw / 2, y + 18, { align: 'center' });
+  });
+
+  y += 26;
+
+  // ── Cost Per Result ──
+  setFont('bold', 9, [37, 99, 235]);
+  doc.text('PERBANDINGAN COST PER RESULT', margin, y);
+  line(margin, y + 2, W - margin, 37, 99, 235, 0.5);
+  y += 7;
+
+  const cprHeaders = ['Sumber Data', 'Jumlah Result', 'Cost Per Result', 'Keterangan'];
+  const cprData = [
+    ['Dashboard Meta',       '254 result',                rpPdf(d.cprMeta), 'Angka platform (tidak akurat)'],
+    ['Real Chat WhatsApp',   `${d.resWA} chat`,           rpPdf(d.cprWA),  `+${rpPdf(d.cprWA - d.cprMeta)} lebih mahal`],
+    ['Gap / Result Hilang',  `${d.gap} result (${d.gapPct}%)`, '–',        'Klik tanpa kirim pesan ke WA'],
+  ];
+  const cprCols = [CW * 0.26, CW * 0.17, CW * 0.19, CW * 0.38];
+  const rowH = 10;
+
+  // Header
+  rect(margin, y, CW, rowH, 15, 32, 68);
+  let cx = margin;
+  cprHeaders.forEach((h, i) => {
+    setFont('bold', 8, [255, 255, 255]);
+    doc.text(h, cx + cprCols[i] / 2, y + 6.5, { align: 'center' });
+    cx += cprCols[i];
+  });
+  y += rowH;
+
+  const rowBg = [[239, 246, 255], [255, 249, 238], [254, 242, 242]];
+  cprData.forEach((row, ri) => {
+    rect(margin, y, CW, rowH, ...rowBg[ri]);
+    doc.setDrawColor(209, 213, 219);
+    doc.setLineWidth(0.2);
+    doc.rect(margin, y, CW, rowH);
+    cx = margin;
+    row.forEach((cell, ci) => {
+      const align = ci === 0 || ci === 3 ? 'left' : 'center';
+      const xPos  = align === 'left' ? cx + 4 : cx + cprCols[ci] / 2;
+      const color = (ci === 2 && ri === 1) ? [185, 28, 28] : [51, 65, 85];
+      const fw    = (ci === 2 && ri === 1) ? 'bold' : 'normal';
+      setFont(fw, 8.5, color);
+      doc.text(cell, xPos, y + 6.5, { align });
+      cx += cprCols[ci];
+    });
+    y += rowH;
+  });
+
+  y += 6;
+
+  // ── Performa Budget ──
+  setFont('bold', 9, [37, 99, 235]);
+  doc.text('PERFORMA BUDGET', margin, y);
+  line(margin, y + 2, W - margin, 37, 99, 235, 0.5);
+  y += 7;
+
+  const bw = CW / 3;
+  const budgetCards = [
+    { val: rpPdf(d.budgetIdeal), label: 'Budget Ideal', sub: `${d.hari} Hari`, bg: [239, 246, 255] },
+    { val: rpPdf(d.spent),       label: 'Actual Spent', sub: 'Total Dikeluarkan', bg: [239, 246, 255] },
+    { val: rpPdf(d.overspend),   label: `Overspend (+${d.overpct}%)`, sub: 'Batas toleransi ±20% AMAN', bg: [255, 251, 235] },
+  ];
+
+  budgetCards.forEach((bc, i) => {
+    const x = margin + i * bw;
+    rect(x + 1, y, bw - 2, 22, ...bc.bg);
+    doc.setDrawColor(209, 213, 219);
+    doc.setLineWidth(0.3);
+    doc.rect(x + 1, y, bw - 2, 22);
+    const vc = i === 2 ? [180, 83, 9] : [15, 32, 68];
+    setFont('bold', 12, vc);
+    doc.text(bc.val, x + bw / 2, y + 9, { align: 'center' });
+    setFont('normal', 7.5, [100, 116, 139]);
+    doc.text(bc.label, x + bw / 2, y + 14, { align: 'center' });
+    setFont('normal', 7, [107, 114, 128]);
+    doc.text(bc.sub, x + bw / 2, y + 19, { align: 'center' });
+  });
+
+  y += 28;
+
+  // ── Closing & ROAS ──
+  setFont('bold', 9, [37, 99, 235]);
+  doc.text('CLOSING ADMIN & ROAS', margin, y);
+  line(margin, y + 2, W - margin, 37, 99, 235, 0.5);
+  y += 7;
+
+  // ROAS banner
+  const roasGood = d.roas >= 2;
+  const rBg = roasGood ? [240, 253, 244] : [254, 242, 242];
+  const rBd = roasGood ? [187, 247, 208] : [254, 202, 202];
+  rect(margin, y, CW, 14, ...rBg);
+  doc.setDrawColor(...rBd);
+  doc.setLineWidth(0.4);
+  doc.rect(margin, y, CW, 14);
+  const rColor = roasGood ? [22, 101, 52] : [153, 27, 27];
+  setFont('bold', 11, rColor);
+  doc.text(`ROAS ${d.roas.toFixed(2)}x`, margin + 6, y + 6);
+  setFont('normal', 8.5, rColor);
+  doc.text(`Setiap Rp1 iklan menghasilkan Rp${d.roas.toFixed(2)} omzet · Total Omzet: ${rpPdf(d.totalOmzet)}`, margin + 6, y + 11);
+  y += 20;
+
+  // Produk table
+  const pHeaders = ['Nama Produk', 'Harga Satuan', 'Qty Terjual', 'Subtotal'];
+  const pCols = [CW * 0.38, CW * 0.22, CW * 0.15, CW * 0.25];
+
+  rect(margin, y, CW, 9, 15, 32, 68);
+  cx = margin;
+  pHeaders.forEach((h, i) => {
+    const align = i === 0 ? 'left' : 'center';
+    const xp = align === 'left' ? cx + 4 : cx + pCols[i] / 2;
+    setFont('bold', 8, [255, 255, 255]);
+    doc.text(h, xp, y + 6, { align });
+    cx += pCols[i];
+  });
+  y += 9;
+
+  d.produk.forEach((p, pi) => {
+    const bg = pi % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+    rect(margin, y, CW, 9, ...bg);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.rect(margin, y, CW, 9);
+    const row2 = [p.nama, rpPdf(p.harga), String(p.qty), rpPdf(p.harga * p.qty)];
+    cx = margin;
+    row2.forEach((cell, ci) => {
+      const align = ci === 0 ? 'left' : 'center';
+      const xp = align === 'left' ? cx + 4 : cx + pCols[ci] / 2;
+      setFont('normal', 8.5, [51, 65, 85]);
+      doc.text(cell, xp, y + 6, { align });
+      cx += pCols[ci];
+    });
+    y += 9;
+  });
+
+  // Total row
+  rect(margin, y, CW, 9, 240, 249, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, CW, 9);
+  cx = margin;
+  const totRow = ['Total Keseluruhan', '—', String(d.totalUnit) + ' unit', rpPdf(d.totalOmzet)];
+  totRow.forEach((cell, ci) => {
+    const align = ci === 0 ? 'left' : 'center';
+    const xp = align === 'left' ? cx + 4 : cx + pCols[ci] / 2;
+    setFont('bold', 8.5, [15, 32, 68]);
+    doc.text(cell, xp, y + 6, { align });
+    cx += pCols[ci];
+  });
+
+  y += 14;
+
+  // ── Footer ──
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(226, 232, 240);
+  doc.line(margin, y, W - margin, y);
+  y += 5;
+  setFont('normal', 7.5, [148, 163, 184]);
+  doc.text(`${d.nama}  ·  Meta Ads Manager + WhatsApp Tracking  ·  Periode ${d.periode}  ·  Hal. 1/1`, W / 2, y, { align: 'center' });
+
+  const filename = `MetaAds_${d.nama.replace(/\s+/g,'_')}_${d.periode.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
+  doc.save(filename);
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetForm() {
+  document.getElementById('nama').value = '';
+  document.getElementById('periode').value = '';
+  document.getElementById('budget_harian').value = '';
+  document.getElementById('hari').value = '7';
+  document.getElementById('spent').value = '';
+  document.getElementById('reach').value = '';
+  document.getElementById('result_meta').value = '';
+  document.getElementById('result_wa').value = '';
+  document.getElementById('produk-list').innerHTML = '';
+  uid = 0;
+  addProduk();
+  document.getElementById('summary-wrap').classList.remove('show');
+  document.getElementById('step1').className = 'step active';
+  document.getElementById('step2').className = 'step';
+  document.getElementById('step3').className = 'step';
+  reportData = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+addProduk();
+</script>
+</body>
+</html>
